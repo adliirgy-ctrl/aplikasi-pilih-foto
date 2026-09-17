@@ -9,10 +9,9 @@ import {
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-// URL Backend Vercel Anda
 const API_URL = "https://aplikasi-pilih-foto.vercel.app";
 
-// --- 1. HALAMAN UTAMA / BERANDA PENGHUBUNG ---
+// --- 1. HALAMAN UTAMA / BERANDA ---
 function Beranda() {
   return (
     <div style={styles.heroContainer}>
@@ -23,7 +22,6 @@ function Beranda() {
           Kelola portofolio, unggah hasil jepretan, dan biarkan klien memilih
           foto favorit mereka dengan aman dan terlindungi watermark.
         </p>
-
         <div style={styles.heroActions}>
           <Link to="/fotografer/login" style={styles.primaryButton}>
             Login Fotografer &rarr;
@@ -34,7 +32,7 @@ function Beranda() {
   );
 }
 
-// --- 2. HALAMAN LOGIN FOTOGRAFER ---
+// --- 2. LOGIN FOTOGRAFER ---
 function LoginFotografer() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +41,6 @@ function LoginFotografer() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Kredensial login fotografer (bisa Anda ubah sesuai keinginan)
     if (username === "fotografer" && password === "admin123") {
       localStorage.setItem("isFotograferLoggedIn", "true");
       navigate("/fotografer/dashboard");
@@ -107,7 +104,7 @@ function LoginFotografer() {
   );
 }
 
-// --- 3. DASHBOARD FOTOGRAFER (Hanya bisa diakses jika sudah login) ---
+// --- 3. DASHBOARD FOTOGRAFER (Dilengkapi Daftar Sesi Aktif & Hapus) ---
 function DashboardFotografer() {
   const [files, setFiles] = useState([]);
   const [namaKlien, setNamaKlien] = useState("");
@@ -115,15 +112,26 @@ function DashboardFotografer() {
   const [status, setStatus] = useState("");
   const [linkGaleri, setLinkGaleri] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [daftarSesi, setDaftarSesi] = useState([]);
   const navigate = useNavigate();
 
-  // Cek autentikasi saat halaman dibuka
   useEffect(() => {
     const isAuth = localStorage.getItem("isFotograferLoggedIn");
     if (!isAuth) {
       navigate("/fotografer/login");
+    } else {
+      ambilSemuaSesi();
     }
   }, [navigate]);
+
+  const ambilSemuaSesi = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/sesi`);
+      setDaftarSesi(res.data);
+    } catch (err) {
+      console.error("Gagal memuat daftar sesi", err);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("isFotograferLoggedIn");
@@ -160,6 +168,10 @@ function DashboardFotografer() {
       });
       setStatus("Sesi galeri berhasil dibuat! 🎉");
       setLinkGaleri(`${window.location.origin}/galeri/${sesiRes.data.idSesi}`);
+      setNamaKlien("");
+      setPin("");
+      setFiles([]);
+      ambilSemuaSesi(); // Refresh daftar sesi
     } catch (error) {
       console.error(error);
       const pesanError =
@@ -170,13 +182,24 @@ function DashboardFotografer() {
     }
   };
 
+  const handleHapusSesi = async (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus sesi galeri ini?")) {
+      try {
+        await axios.delete(`${API_URL}/api/sesi/${id}`);
+        ambilSemuaSesi();
+      } catch (err) {
+        alert("Gagal menghapus sesi");
+      }
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.headerBar}>
         <div>
           <h2 style={styles.pageTitle}>Dashboard Fotografer 📷</h2>
           <p style={styles.pageDesc}>
-            Panel unggah khusus fotografer profesional.
+            Panel unggah dan manajemen galeri klien.
           </p>
         </div>
         <button onClick={handleLogout} style={styles.logoutButton}>
@@ -185,6 +208,7 @@ function DashboardFotografer() {
       </div>
 
       <div style={styles.card}>
+        <h3 style={{ marginTop: 0, color: "#1e293b" }}>Buat Sesi Baru</h3>
         <form onSubmit={handleBuatSesi}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Nama Klien / Acara</label>
@@ -272,8 +296,7 @@ function DashboardFotografer() {
           <p
             style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#15803d" }}
           >
-            Bagikan tautan dan PIN rahasia <strong>{pin}</strong> ini kepada
-            klien:
+            Tautan galeri baru saja dibuat:
           </p>
           <div style={{ display: "flex", gap: "10px" }}>
             <input
@@ -289,23 +312,108 @@ function DashboardFotografer() {
               Salin Link
             </button>
           </div>
-          <div style={{ marginTop: "12px" }}>
-            <a
-              href={linkGaleri}
-              target="_blank"
-              rel="noreferrer"
-              style={styles.previewLink}
-            >
-              Buka Halaman Klien di Tab Baru &rarr;
-            </a>
-          </div>
         </div>
       )}
+
+      {/* --- DAFTAR SESI AKTIF --- */}
+      <div style={{ ...styles.card, marginTop: "30px" }}>
+        <h3 style={{ marginTop: 0, color: "#1e293b" }}>
+          📂 Daftar Sesi Galeri Aktif
+        </h3>
+        {daftarSesi.length === 0 ? (
+          <p style={{ color: "#64748b", fontSize: "14px" }}>
+            Belum ada sesi galeri yang dibuat.
+          </p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                textAlign: "left",
+                fontSize: "14px",
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    borderBottom: "2px solid #e2e8f0",
+                    color: "#475569",
+                  }}
+                >
+                  <th style={{ padding: "10px" }}>Nama Klien</th>
+                  <th style={{ padding: "10px" }}>PIN</th>
+                  <th style={{ padding: "10px" }}>Jumlah Foto</th>
+                  <th style={{ padding: "10px" }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {daftarSesi.map((sesi) => {
+                  const urlGaleri = `${window.location.origin}/galeri/${sesi._id}`;
+                  return (
+                    <tr
+                      key={sesi._id}
+                      style={{ borderBottom: "1px solid #f1f5f9" }}
+                    >
+                      <td
+                        style={{
+                          padding: "12px 10px",
+                          fontWeight: "600",
+                          color: "#0f172a",
+                        }}
+                      >
+                        {sesi.namaKlien}
+                      </td>
+                      <td style={{ padding: "12px 10px" }}>
+                        <code>{sesi.pin}</code>
+                      </td>
+                      <td style={{ padding: "12px 10px" }}>
+                        {sesi.fotoList.length} Foto
+                      </td>
+                      <td
+                        style={{
+                          padding: "12px 10px",
+                          display: "flex",
+                          gap: "8px",
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(urlGaleri);
+                            alert("Link berhasil disalin ke clipboard! 📋");
+                          }}
+                          style={styles.tableCopyBtn}
+                        >
+                          Salin Link
+                        </button>
+                        <a
+                          href={urlGaleri}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={styles.tableOpenBtn}
+                        >
+                          Buka
+                        </a>
+                        <button
+                          onClick={() => handleHapusSesi(sesi._id)}
+                          style={styles.tableDeleteBtn}
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-// --- 4. HALAMAN KLIEN (Murni Akses Pilih Foto, TANPA FITUR UPLOAD) ---
+// --- 4. HALAMAN KLIEN (Dilengkapi Auto-Bypass PIN untuk Fotografer) ---
 function GaleriKlien() {
   const { id } = useParams();
   const [sesi, setSesi] = useState(null);
@@ -320,6 +428,12 @@ function GaleriKlien() {
       .then((res) => {
         setSesi(res.data);
         setStatus("");
+
+        // AUTO-BYPASS: Jika yang membuka adalah fotografer yang sedang login, langsung masuk tanpa PIN!
+        const isFotografer = localStorage.getItem("isFotograferLoggedIn");
+        if (isFotografer === "true") {
+          setIsLoggedIn(true);
+        }
       })
       .catch((err) => {
         setStatus(
@@ -410,7 +524,6 @@ function GaleriKlien() {
 
   const jumlahDipilih = sesi.fotoList.filter((foto) => foto.terpilih).length;
 
-  // Tampilan Galeri Interaktif Klien (Tanpa Tombol/Menu Upload Sama Sekali)
   return (
     <div style={styles.container}>
       <div style={styles.clientHeader}>
@@ -490,7 +603,7 @@ function App() {
   );
 }
 
-// --- STYLING PROFESIONAL MODERN ---
+// --- STYLING PROFESIONAL ---
 const styles = {
   heroContainer: {
     minHeight: "100vh",
@@ -504,8 +617,7 @@ const styles = {
     backgroundColor: "#ffffff",
     padding: "50px 40px",
     borderRadius: "16px",
-    boxShadow:
-      "0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)",
+    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
     textAlign: "center",
     maxWidth: "550px",
     width: "100%",
@@ -518,7 +630,6 @@ const styles = {
     fontSize: "12px",
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
   },
   heroTitle: {
     fontSize: "28px",
@@ -540,14 +651,13 @@ const styles = {
     textDecoration: "none",
     fontWeight: "600",
     fontSize: "15px",
-    boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
     display: "inline-block",
   },
   container: {
     maxWidth: "1000px",
     margin: "0 auto",
     padding: "30px 20px",
-    fontFamily: "system-ui, -apple-system, sans-serif",
+    fontFamily: "system-ui, sans-serif",
     backgroundColor: "#f8fafc",
     minHeight: "100vh",
   },
@@ -565,11 +675,7 @@ const styles = {
     fontWeight: "700",
     color: "#0f172a",
   },
-  pageDesc: {
-    margin: "4px 0 0 0",
-    fontSize: "14px",
-    color: "#64748b",
-  },
+  pageDesc: { margin: "4px 0 0 0", fontSize: "14px", color: "#64748b" },
   logoutButton: {
     backgroundColor: "#fee2e2",
     color: "#991b1b",
@@ -587,9 +693,7 @@ const styles = {
     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
     marginBottom: "20px",
   },
-  inputGroup: {
-    marginBottom: "20px",
-  },
+  inputGroup: { marginBottom: "20px" },
   label: {
     display: "block",
     fontSize: "14px",
@@ -603,7 +707,6 @@ const styles = {
     borderRadius: "8px",
     border: "1px solid #cbd5e1",
     fontSize: "14px",
-    outline: "none",
     boxSizing: "border-box",
   },
   hint: {
@@ -639,7 +742,6 @@ const styles = {
     fontSize: "15px",
     fontWeight: "600",
     cursor: "pointer",
-    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.15)",
   },
   alertBox: {
     marginTop: "20px",
@@ -671,12 +773,6 @@ const styles = {
     fontWeight: "600",
     cursor: "pointer",
   },
-  previewLink: {
-    color: "#15803d",
-    fontSize: "14px",
-    fontWeight: "500",
-    textDecoration: "none",
-  },
   centerScreen: {
     minHeight: "100vh",
     display: "flex",
@@ -689,14 +785,13 @@ const styles = {
     backgroundColor: "white",
     padding: "40px",
     borderRadius: "12px",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
     textAlign: "center",
   },
   loginCard: {
     backgroundColor: "white",
     padding: "40px",
     borderRadius: "16px",
-    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.08)",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
     maxWidth: "400px",
     width: "100%",
     textAlign: "center",
@@ -732,11 +827,7 @@ const styles = {
     fontWeight: "600",
     cursor: "pointer",
   },
-  errorText: {
-    color: "#dc2626",
-    fontSize: "13px",
-    marginTop: "15px",
-  },
+  errorText: { color: "#dc2626", fontSize: "13px", marginTop: "15px" },
   clientHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -749,11 +840,7 @@ const styles = {
     flexWrap: "wrap",
     gap: "10px",
   },
-  clientActionBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
+  clientActionBox: { display: "flex", alignItems: "center", gap: "12px" },
   counterBadge: {
     fontSize: "14px",
     color: "#334155",
@@ -818,7 +905,37 @@ const styles = {
     borderRadius: "20px",
     fontSize: "12px",
     fontWeight: "700",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+  },
+  tableCopyBtn: {
+    backgroundColor: "#e0f2fe",
+    color: "#0369a1",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+  tableOpenBtn: {
+    backgroundColor: "#dcfce7",
+    color: "#166534",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "600",
+    textDecoration: "none",
+  },
+  tableDeleteBtn: {
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "600",
   },
 };
 

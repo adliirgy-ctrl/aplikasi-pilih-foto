@@ -111,4 +111,24 @@ app.put("/api/sesi/:id", async (req, res) => {
   }
 });
 
+// 6. RUTE MENGAMBIL SEMUA SESI (Untuk Daftar Sesi Aktif)
+app.get("/api/sesi", async (req, res) => {
+  try {
+    const semuaSesi = await Sesi.find().sort({ _id: -1 }); // Urutkan dari yang terbaru
+    res.json(semuaSesi);
+  } catch (error) {
+    res.status(500).json({ error: "Gagal mengambil daftar sesi" });
+  }
+});
+
+// 7. RUTE MENGHAPUS SESI
+app.delete("/api/sesi/:id", async (req, res) => {
+  try {
+    await Sesi.findByIdAndDelete(req.params.id);
+    res.json({ pesan: "Sesi galeri berhasil dihapus! 🗑️" });
+  } catch (error) {
+    res.status(500).json({ error: "Gagal menghapus sesi" });
+  }
+});
+
 module.exports = app;
