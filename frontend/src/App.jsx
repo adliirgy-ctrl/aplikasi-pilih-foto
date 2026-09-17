@@ -25,8 +25,8 @@ function Beranda() {
         </p>
 
         <div style={styles.heroActions}>
-          <Link to="/fotografer" style={styles.primaryButton}>
-            Masuk ke Dashboard Fotografer &rarr;
+          <Link to="/fotografer/login" style={styles.primaryButton}>
+            Login Fotografer &rarr;
           </Link>
         </div>
       </div>
@@ -34,7 +34,80 @@ function Beranda() {
   );
 }
 
-// --- 2. DASHBOARD FOTOGRAFER (HALAMAN UPLOAD & KELOLA) ---
+// --- 2. HALAMAN LOGIN FOTOGRAFER ---
+function LoginFotografer() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // Kredensial login fotografer (bisa Anda ubah sesuai keinginan)
+    if (username === "fotografer" && password === "admin123") {
+      localStorage.setItem("isFotograferLoggedIn", "true");
+      navigate("/fotografer/dashboard");
+    } else {
+      setError("Username atau Password salah! ❌");
+    }
+  };
+
+  return (
+    <div style={styles.centerScreen}>
+      <div style={styles.loginCard}>
+        <span style={styles.badge}>Portal Eksklusif</span>
+        <h2 style={{ margin: "10px 0 5px 0", color: "#0f172a" }}>
+          Login Fotografer
+        </h2>
+        <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "25px" }}>
+          Masuk untuk mengelola dan mengunggah sesi foto klien.
+        </p>
+        <form onSubmit={handleLogin}>
+          <div style={{ textAlign: "left", marginBottom: "15px" }}>
+            <label style={styles.label}>Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="fotografer"
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={{ textAlign: "left", marginBottom: "20px" }}>
+            <label style={styles.label}>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="admin123"
+              style={styles.input}
+              required
+            />
+          </div>
+          <button type="submit" style={styles.loginButton}>
+            Masuk ke Dasbor
+          </button>
+        </form>
+        {error && <p style={styles.errorText}>{error}</p>}
+        <div style={{ marginTop: "20px" }}>
+          <Link
+            to="/"
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              textDecoration: "none",
+            }}
+          >
+            &larr; Kembali ke Beranda
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 3. DASHBOARD FOTOGRAFER (Hanya bisa diakses jika sudah login) ---
 function DashboardFotografer() {
   const [files, setFiles] = useState([]);
   const [namaKlien, setNamaKlien] = useState("");
@@ -42,6 +115,20 @@ function DashboardFotografer() {
   const [status, setStatus] = useState("");
   const [linkGaleri, setLinkGaleri] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const navigate = useNavigate();
+
+  // Cek autentikasi saat halaman dibuka
+  useEffect(() => {
+    const isAuth = localStorage.getItem("isFotograferLoggedIn");
+    if (!isAuth) {
+      navigate("/fotografer/login");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isFotograferLoggedIn");
+    navigate("/fotografer/login");
+  };
 
   const handlePilihFile = (e) => setFiles(Array.from(e.target.files));
 
@@ -89,12 +176,12 @@ function DashboardFotografer() {
         <div>
           <h2 style={styles.pageTitle}>Dashboard Fotografer 📷</h2>
           <p style={styles.pageDesc}>
-            Buat sesi galeri privat baru untuk klien Anda.
+            Panel unggah khusus fotografer profesional.
           </p>
         </div>
-        <Link to="/" style={styles.secondaryButton}>
-          &larr; Beranda
-        </Link>
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Logout 🚪
+        </button>
       </div>
 
       <div style={styles.card}>
@@ -111,7 +198,7 @@ function DashboardFotografer() {
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>PIN Akses Rahasia</label>
+            <label style={styles.label}>PIN Akses Rahasia Klien</label>
             <input
               type="text"
               placeholder="Contoh: 2026"
@@ -186,7 +273,7 @@ function DashboardFotografer() {
             style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#15803d" }}
           >
             Bagikan tautan dan PIN rahasia <strong>{pin}</strong> ini kepada
-            klien Anda:
+            klien:
           </p>
           <div style={{ display: "flex", gap: "10px" }}>
             <input
@@ -218,7 +305,7 @@ function DashboardFotografer() {
   );
 }
 
-// --- 3. HALAMAN KLIEN (GALERI & SELEKSI FOTO) ---
+// --- 4. HALAMAN KLIEN (Murni Akses Pilih Foto, TANPA FITUR UPLOAD) ---
 function GaleriKlien() {
   const { id } = useParams();
   const [sesi, setSesi] = useState(null);
@@ -323,12 +410,12 @@ function GaleriKlien() {
 
   const jumlahDipilih = sesi.fotoList.filter((foto) => foto.terpilih).length;
 
-  // Tampilan Galeri Interaktif Klien
+  // Tampilan Galeri Interaktif Klien (Tanpa Tombol/Menu Upload Sama Sekali)
   return (
     <div style={styles.container}>
       <div style={styles.clientHeader}>
         <div>
-          <span style={styles.badgeClient}>Sesi Aktif</span>
+          <span style={styles.badgeClient}>Sesi Aktif Klien</span>
           <h2 style={{ margin: "5px 0 0 0", color: "#0f172a" }}>
             {sesi.namaKlien}
           </h2>
@@ -389,20 +476,21 @@ function GaleriKlien() {
   );
 }
 
-// --- 4. TATA LETAK UTAMA ---
+// --- 5. TATA LETAK UTAMA ---
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Beranda />} />
-        <Route path="/fotografer" element={<DashboardFotografer />} />
+        <Route path="/fotografer/login" element={<LoginFotografer />} />
+        <Route path="/fotografer/dashboard" element={<DashboardFotografer />} />
         <Route path="/galeri/:id" element={<GaleriKlien />} />
       </Routes>
     </Router>
   );
 }
 
-// --- STYLING PROFESIONAL MODERN (CSS-in-JS) ---
+// --- STYLING PROFESIONAL MODERN ---
 const styles = {
   heroContainer: {
     minHeight: "100vh",
@@ -482,14 +570,15 @@ const styles = {
     fontSize: "14px",
     color: "#64748b",
   },
-  secondaryButton: {
-    textDecoration: "none",
-    color: "#475569",
-    fontSize: "14px",
-    fontWeight: "500",
+  logoutButton: {
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    border: "none",
     padding: "8px 14px",
     borderRadius: "6px",
-    backgroundColor: "#e2e8f0",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontSize: "13px",
   },
   card: {
     backgroundColor: "#ffffff",
@@ -634,7 +723,7 @@ const styles = {
   },
   loginButton: {
     width: "100%",
-    backgroundColor: "#10b981",
+    backgroundColor: "#2563eb",
     color: "white",
     border: "none",
     padding: "12px",
@@ -673,7 +762,7 @@ const styles = {
     borderRadius: "6px",
   },
   saveButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#10b981",
     color: "white",
     border: "none",
     padding: "9px 16px",
