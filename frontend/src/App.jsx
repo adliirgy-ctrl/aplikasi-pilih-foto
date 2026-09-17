@@ -8,7 +8,7 @@ import {
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-// --- 1. KOMPONEN HALAMAN FOTOGRAFER (Tetap sama seperti sebelumnya) ---
+// --- 1. KOMPONEN HALAMAN FOTOGRAFER ---
 function DashboardFotografer() {
   const [files, setFiles] = useState([]);
   const [namaKlien, setNamaKlien] = useState("");
@@ -34,7 +34,7 @@ function DashboardFotografer() {
         formData.append("foto", files[i]);
         setStatus(`Mengunggah foto ${i + 1} dari ${files.length}... ⏳`);
         const uploadRes = await axios.post(
-          "https://aplikasi-pilih-foto.vercel.app//api/upload",
+          "https://aplikasi-pilih-foto.vercel.app/api/upload",
           formData,
           { headers: { "Content-Type": "multipart/form-data" } },
         );
@@ -42,7 +42,7 @@ function DashboardFotografer() {
       }
       setStatus("Menyimpan sesi ke database... ⏳");
       const sesiRes = await axios.post(
-        "https://aplikasi-pilih-foto.vercel.app//api/sesi",
+        "https://aplikasi-pilih-foto.vercel.app/api/sesi",
         {
           namaKlien,
           pin,
@@ -52,6 +52,7 @@ function DashboardFotografer() {
       setStatus(sesiRes.data.pesan);
       setLinkGaleri(`${window.location.origin}/galeri/${sesiRes.data.idSesi}`);
     } catch (error) {
+      console.error(error);
       setStatus("Terjadi kesalahan saat memproses data ❌");
     } finally {
       setIsUploading(false);
@@ -161,19 +162,18 @@ function DashboardFotografer() {
   );
 }
 
-// --- 2. KOMPONEN HALAMAN KLIEN (BARU & LENGKAP) ---
+// --- 2. KOMPONEN HALAMAN KLIEN ---
 function GaleriKlien() {
-  const { id } = useParams(); // Mengambil ID dari link URL
+  const { id } = useParams();
   const [sesi, setSesi] = useState(null);
   const [pinInput, setPinInput] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [status, setStatus] = useState("Memuat data...");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Mengambil data sesi dari Backend saat halaman pertama kali dibuka
   useEffect(() => {
     axios
-      .get(`https://aplikasi-pilih-foto.vercel.app//api/sesi/${id}`)
+      .get(`https://aplikasi-pilih-foto.vercel.app/api/sesi/${id}`)
       .then((res) => {
         setSesi(res.data);
         setStatus("");
@@ -184,7 +184,6 @@ function GaleriKlien() {
       });
   }, [id]);
 
-  // Fungsi Login PIN
   const handleLogin = () => {
     if (pinInput === sesi.pin) {
       setIsLoggedIn(true);
@@ -194,23 +193,19 @@ function GaleriKlien() {
     }
   };
 
-  // Fungsi saat foto diklik (dicentang / batal centang)
   const handlePilihFoto = (index) => {
     const sesiBaru = { ...sesi };
     sesiBaru.fotoList[index].terpilih = !sesiBaru.fotoList[index].terpilih;
     setSesi(sesiBaru);
   };
 
-  // Fungsi mengirim pilihan ke Backend
   const handleSimpanPilihan = async () => {
     setIsSaving(true);
     setStatus("Menyimpan pilihan Anda... ⏳");
     try {
       const res = await axios.put(
-        `https://aplikasi-pilih-foto.vercel.app//api/sesi/${id}`,
-        {
-          fotoList: sesi.fotoList,
-        },
+        `https://aplikasi-pilih-foto.vercel.app/api/sesi/${id}`,
+        { fotoList: sesi.fotoList },
       );
       setStatus(res.data.pesan);
     } catch (error) {
@@ -223,7 +218,6 @@ function GaleriKlien() {
   if (!sesi)
     return <h3 style={{ textAlign: "center", marginTop: "50px" }}>{status}</h3>;
 
-  // TAMPILAN JIKA BELUM LOGIN
   if (!isLoggedIn) {
     return (
       <div
@@ -271,7 +265,6 @@ function GaleriKlien() {
     );
   }
 
-  // TAMPILAN JIKA SUDAH LOGIN (GALERI)
   const jumlahDipilih = sesi.fotoList.filter((foto) => foto.terpilih).length;
 
   return (
@@ -324,7 +317,6 @@ function GaleriKlien() {
         </div>
       )}
 
-      {/* Grid Foto */}
       <div
         style={{
           display: "grid",
@@ -348,7 +340,6 @@ function GaleriKlien() {
             }}
           >
             <img
-              // 1. WATERMARK & KOMPRESI OTOMATIS: Menyisipkan perintah ke link Cloudinary
               src={foto.url.replace(
                 "/upload/",
                 "/upload/c_scale,w_800/l_text:Arial_60_bold:PROOF,co_white,o_50,a_-45/",
@@ -359,15 +350,13 @@ function GaleriKlien() {
                 height: "200px",
                 objectFit: "cover",
                 display: "block",
-                pointerEvents: "none", // 2. ANTI LONG-PRESS: Mencegah tekan lama di HP
+                pointerEvents: "none",
                 userSelect: "none",
               }}
-              // 3. ANTI KLIK KANAN & ANTI DRAG
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
             />
 
-            {/* Tanda Centang Hijau */}
             {foto.terpilih && (
               <div
                 style={{
@@ -396,7 +385,7 @@ function GaleriKlien() {
   );
 }
 
-// --- 3. KOMPONEN UTAMA (Navigasi) ---
+// --- 3. KOMPONEN UTAMA ---
 function App() {
   return (
     <Router>
@@ -414,7 +403,7 @@ function App() {
             paddingBottom: "10px",
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignions: "center",
           }}
         >
           <span>Platform Pilih Foto 📸</span>
