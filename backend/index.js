@@ -102,7 +102,4 @@ app.put("/api/sesi/:id", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`Server berhasil berjalan di http://localhost:${PORT}`),
-);
+module.exports = app;
