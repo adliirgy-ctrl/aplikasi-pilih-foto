@@ -53,7 +53,10 @@ function DashboardFotografer() {
       setLinkGaleri(`${window.location.origin}/galeri/${sesiRes.data.idSesi}`);
     } catch (error) {
       console.error(error);
-      setStatus("Terjadi kesalahan saat memproses data ❌");
+      // Menampilkan detail error asli dari server di HP Anda
+      const pesanError =
+        error.response?.data?.error || error.message || "Kesalahan tak dikenal";
+      setStatus(`Gagal: ${pesanError} ❌`);
     } finally {
       setIsUploading(false);
     }

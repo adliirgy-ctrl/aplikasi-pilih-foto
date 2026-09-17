@@ -13,7 +13,16 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(cors());
+
+// Konfigurasi CORS agar mengizinkan semua akses dari frontend Vercel Anda
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
 app.use(express.json());
 
 // Menghubungkan ke MongoDB
