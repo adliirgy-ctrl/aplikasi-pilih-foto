@@ -34,20 +34,23 @@ function DashboardFotografer() {
         formData.append("foto", files[i]);
         setStatus(`Mengunggah foto ${i + 1} dari ${files.length}... ⏳`);
         const uploadRes = await axios.post(
-          "http://localhost:5000/api/upload",
+          "https://aplikasi-pilih-foto.vercel.app//api/upload",
           formData,
           { headers: { "Content-Type": "multipart/form-data" } },
         );
         fotoUrls.push(uploadRes.data.url);
       }
       setStatus("Menyimpan sesi ke database... ⏳");
-      const sesiRes = await axios.post("http://localhost:5000/api/sesi", {
-        namaKlien,
-        pin,
-        fotoUrls,
-      });
+      const sesiRes = await axios.post(
+        "https://aplikasi-pilih-foto.vercel.app//api/sesi",
+        {
+          namaKlien,
+          pin,
+          fotoUrls,
+        },
+      );
       setStatus(sesiRes.data.pesan);
-      setLinkGaleri(`http://localhost:5173/galeri/${sesiRes.data.idSesi}`);
+      setLinkGaleri(`${window.location.origin}/galeri/${sesiRes.data.idSesi}`);
     } catch (error) {
       setStatus("Terjadi kesalahan saat memproses data ❌");
     } finally {
@@ -170,7 +173,7 @@ function GaleriKlien() {
   // Mengambil data sesi dari Backend saat halaman pertama kali dibuka
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/sesi/${id}`)
+      .get(`https://aplikasi-pilih-foto.vercel.app//api/sesi/${id}`)
       .then((res) => {
         setSesi(res.data);
         setStatus("");
@@ -203,9 +206,12 @@ function GaleriKlien() {
     setIsSaving(true);
     setStatus("Menyimpan pilihan Anda... ⏳");
     try {
-      const res = await axios.put(`http://localhost:5000/api/sesi/${id}`, {
-        fotoList: sesi.fotoList,
-      });
+      const res = await axios.put(
+        `https://aplikasi-pilih-foto.vercel.app//api/sesi/${id}`,
+        {
+          fotoList: sesi.fotoList,
+        },
+      );
       setStatus(res.data.pesan);
     } catch (error) {
       setStatus("Gagal menyimpan pilihan ❌");
